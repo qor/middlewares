@@ -2,11 +2,15 @@ package middlewares
 
 import "net/http"
 
+// MiddlewareHandler HTTP middleware
+type MiddlewareHandler func(http.Handler) http.Handler
+
+// Middlewares middlewares stack
 type Middlewares struct {
 	middlewares []*Middleware
 }
-type MiddlewareHandler func(http.Handler) http.Handler
 
+// Middleware middleware struct
 type Middleware struct {
 	Name    string
 	Handler MiddlewareHandler
