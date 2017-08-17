@@ -25,6 +25,24 @@ func (middlewares *Middlewares) Use(name string, handler MiddlewareHandler) {
 	})
 }
 
+// Remove remove middleware by name
+func (middlewares *Middlewares) Remove(name string) {
+	registeredMiddlewares := middlewares.middlewares
+	for idx, middleware := range registeredMiddlewares {
+		if middleware.Name == name {
+			if idx > 0 {
+				middlewares.middlewares = middlewares.middlewares[0 : idx-1]
+			} else {
+				middlewares.middlewares = []*Middleware{}
+			}
+
+			if idx < len(registeredMiddlewares)-1 {
+				middlewares.middlewares = append(middlewares.middlewares, registeredMiddlewares[idx+1:]...)
+			}
+		}
+	}
+}
+
 // Before insert middleware before name
 func (middlewares *Middlewares) Before(name string) Middleware {
 	return Middleware{
