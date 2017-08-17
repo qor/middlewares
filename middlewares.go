@@ -10,16 +10,6 @@ type Middlewares struct {
 	middlewares []*Middleware
 }
 
-// Middleware middleware struct
-type Middleware struct {
-	Name    string
-	Handler MiddlewareHandler
-
-	middlewares *Middlewares
-	before      string
-	after       string
-}
-
 // Use use middleware
 func (middlewares *Middlewares) Use(name string, handler MiddlewareHandler) {
 	middlewares.middlewares = append(middlewares.middlewares, &Middleware{
@@ -63,11 +53,8 @@ func (middlewares *Middlewares) After(name string) Middleware {
 	}
 }
 
-// Use use middleware
-func (middleware Middleware) Use(name string, handler MiddlewareHandler) {
-	middleware.Name = name
-	middleware.Handler = handler
-	if middleware.middlewares != nil {
-		middleware.middlewares.middlewares = append(middleware.middlewares.middlewares, &middleware)
-	}
+// Apply apply middlewares to handler
+func (middlewares *Middlewares) Apply(handler http.Handler) http.Handler {
+	// compile middlewares
+	return handler
 }

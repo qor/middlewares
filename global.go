@@ -1,24 +1,31 @@
 package middlewares
 
-// GlobalMiddlewareStack default middleware stack
-var GlobalMiddlewareStack = &Middlewares{}
+import "net/http"
 
-// Use register middleware from GlobalMiddlewareStack
+// DefaultMiddlewareStack default middleware stack
+var DefaultMiddlewareStack = &Middlewares{}
+
+// Use register middleware from DefaultMiddlewareStack
 func Use(name string, handler MiddlewareHandler) {
-	GlobalMiddlewareStack.Use(name, handler)
+	DefaultMiddlewareStack.Use(name, handler)
 }
 
-// Remove remove middleware by name from GlobalMiddlewareStack
+// Remove remove middleware by name from DefaultMiddlewareStack
 func Remove(name string) {
-	GlobalMiddlewareStack.Remove(name)
+	DefaultMiddlewareStack.Remove(name)
 }
 
-// Before insert middleware before name into GlobalMiddlewareStack
+// Before insert middleware before name into DefaultMiddlewareStack
 func Before(name string) Middleware {
-	return GlobalMiddlewareStack.Before(name)
+	return DefaultMiddlewareStack.Before(name)
 }
 
-// After insert middleware after name into GlobalMiddlewareStack
+// After insert middleware after name into DefaultMiddlewareStack
 func After(name string) Middleware {
-	return GlobalMiddlewareStack.After(name)
+	return DefaultMiddlewareStack.After(name)
+}
+
+// Apply apply middlewares to handler
+func Apply(handler http.Handler) http.Handler {
+	return DefaultMiddlewareStack.Apply(handler)
 }
