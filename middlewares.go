@@ -53,8 +53,13 @@ func (middlewares *Middlewares) After(name string) Middleware {
 	}
 }
 
+func (middleware) String() string {
+	// TODO sort, compile middlewares, print its name in order
+	return ""
+}
+
 // Apply apply middlewares to handler
 func (middlewares *Middlewares) Apply(handler http.Handler) http.Handler {
-	// compile middlewares
+	// TODO sort, compile middlewares, wrap current handler
 	return handler
 }
