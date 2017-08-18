@@ -1,6 +1,9 @@
 package middlewares
 
-import "net/http"
+import (
+	"fmt"
+	"net/http"
+)
 
 // MiddlewareHandler HTTP middleware
 type MiddlewareHandler func(http.Handler) http.Handler
@@ -11,12 +14,8 @@ type Middlewares struct {
 }
 
 // Use use middleware
-func (middlewares *Middlewares) Use(name string, handler MiddlewareHandler) {
-	middlewares.middlewares = append(middlewares.middlewares, &Middleware{
-		middlewares: middlewares,
-		Name:        name,
-		Handler:     handler,
-	})
+func (middlewares *Middlewares) Use(middleware Middleware) {
+	middlewares.middlewares = append(middlewares.middlewares, &middleware)
 }
 
 // Remove remove middleware by name
@@ -37,20 +36,25 @@ func (middlewares *Middlewares) Remove(name string) {
 	}
 }
 
-// Before insert middleware before name
-func (middlewares *Middlewares) Before(name ...string) Middleware {
-	return Middleware{
-		Before:      name,
-		middlewares: middlewares,
-	}
-}
+func (middlewares *Middlewares) Compile() error {
+	var (
+		errs           []error
+		middlewaresMap = map[string]*Middleware{}
+	)
 
-// After insert middleware after name
-func (middlewares *Middlewares) After(name ...string) Middleware {
-	return Middleware{
-		After:       name,
-		middlewares: middlewares,
+	for _, middleware := range middlewares.middlewares {
+		middlewaresMap[middleware.Name] = middleware
 	}
+
+	for _, middleware := range middlewaresMap {
+		for _, require := range middleware.Requires {
+			if _, ok := middlewaresMap[require]; !ok {
+				errs = append(errs, fmt.Errorf("middleware %v requires %v, but it doesn't exist", middleware.Name, require))
+			}
+		}
+	}
+
+	return nil
 }
 
 func (middlewares *Middlewares) String() string {
