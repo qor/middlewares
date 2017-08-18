@@ -61,7 +61,7 @@ func (middlewares *Middlewares) sortMiddlewares() []*Middleware {
 	}
 
 	sortMiddleware = func(m *Middleware) {
-		if getRIndex(sortedNames, m.Name) == -1 { // if not sorted
+		if _, found := getRIndex(sortedNames, m.Name); !found { // if not sorted
 			var (
 				minIndex = -1
 				maxIndex = -1
@@ -69,14 +69,16 @@ func (middlewares *Middlewares) sortMiddlewares() []*Middleware {
 
 			// sort by InsertAfter
 			for _, insertAfter := range m.InsertAfter {
-				idx := getRIndex(sortedNames, insertAfter)
-				if idx != -1 {
-					if idx > minIndex {
-						minIndex = idx
+				idx, found := getRIndex(sortedNames, insertAfter)
+				if found && idx > minIndex {
+					minIndex = idx
+				}
+
+				if idx, has := getRIndex(middlewareNames, insertAfter); has {
+					if !found {
+						sortMiddleware(middlewares.middlewares[idx])
 					}
-				} else if idx := getRIndex(middlewareNames, insertAfter); idx != -1 {
-					sortedNames = append(sortedNames, m.Name)
-					sortMiddleware(middlewares.middlewares[idx])
+
 					// update middlewares InsertBefore
 					middlewares.middlewares[idx].InsertBefore = uniqueAppend(middlewares.middlewares[idx].InsertBefore, m.Name)
 					minIndex = len(sortedNames) - 1
@@ -85,12 +87,12 @@ func (middlewares *Middlewares) sortMiddlewares() []*Middleware {
 
 			// sort by InsertBefore
 			for _, insertBefore := range m.InsertBefore {
-				idx := getRIndex(sortedNames, insertBefore)
-				if idx != -1 {
-					if idx < minIndex {
-						minIndex = idx
-					}
-				} else if idx := getRIndex(middlewareNames, insertBefore); idx != -1 {
+				idx, found := getRIndex(sortedNames, insertBefore)
+				if found && idx < minIndex {
+					minIndex = idx
+				}
+
+				if idx, has := getRIndex(middlewareNames, insertBefore); has {
 					middlewares.middlewares[idx].InsertAfter = uniqueAppend(middlewares.middlewares[idx].InsertAfter, m.Name)
 				}
 			}
@@ -100,7 +102,7 @@ func (middlewares *Middlewares) sortMiddlewares() []*Middleware {
 			}
 
 			// if current callback haven't been sorted, append it to last
-			if getRIndex(sortedNames, m.Name) == -1 {
+			if _, has := getRIndex(sortedNames, m.Name); !has {
 				sortedNames = append(sortedNames, m.Name)
 			}
 		}
