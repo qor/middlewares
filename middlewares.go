@@ -54,6 +54,18 @@ func (middlewares *Middlewares) sortMiddlewares() []*Middleware {
 				errs = append(errs, fmt.Errorf("middleware %v requires %v, but it doesn't exist", middleware.Name, require))
 			}
 		}
+
+		for _, insertBefore := range middleware.InsertBefore {
+			if m, ok := middlewaresMap[insertBefore]; ok {
+				m.InsertAfter = uniqueAppend(m.InsertAfter, middleware.Name)
+			}
+		}
+
+		for _, insertAfter := range middleware.InsertAfter {
+			if m, ok := middlewaresMap[insertAfter]; ok {
+				m.InsertBefore = uniqueAppend(m.InsertBefore, middleware.Name)
+			}
+		}
 	}
 
 	if len(errs) > 0 {
@@ -67,26 +79,20 @@ func (middlewares *Middlewares) sortMiddlewares() []*Middleware {
 			// sort by InsertAfter
 			for _, insertAfter := range m.InsertAfter {
 				idx, found := getRIndex(sortedNames, insertAfter)
-				if found && idx > minIndex {
-					minIndex = idx
+				if !found {
+					if middleware, ok := middlewaresMap[insertAfter]; ok {
+						sortMiddleware(middleware)
+						idx, found = getRIndex(sortedNames, insertAfter)
+					}
 				}
 
-				if idx, has := getRIndex(middlewareNames, insertAfter); has {
-					if !found {
-						sortMiddleware(middlewares.middlewares[idx])
-					}
-
-					// update middlewares InsertBefore
-					middlewares.middlewares[idx].InsertBefore = uniqueAppend(middlewares.middlewares[idx].InsertBefore, m.Name)
+				if found && idx > minIndex {
+					minIndex = idx
 				}
 			}
 
 			// sort by InsertBefore
 			for _, insertBefore := range m.InsertBefore {
-				if middleware, ok := middlewaresMap[insertBefore]; ok {
-					middleware.InsertAfter = uniqueAppend(middleware.InsertAfter, m.Name)
-				}
-
 				if idx, found := getRIndex(sortedNames, insertBefore); found {
 					if idx < minIndex {
 						sortedNames = append(sortedNames[:idx], sortedNames[idx+1:]...)

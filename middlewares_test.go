@@ -59,8 +59,8 @@ func TestCompileMiddlewares(t *testing.T) {
 
 func TestCompileComplicatedMiddlewares(t *testing.T) {
 	availableMiddlewares := []Middleware{{Name: "A"}, {Name: "B", InsertBefore: []string{"C", "D"}}, {Name: "C", InsertAfter: []string{"E"}}, {Name: "D", InsertAfter: []string{"E"}, InsertBefore: []string{"C"}}, {Name: "E", InsertBefore: []string{"B"}, InsertAfter: []string{"A"}}}
-
 	middlewares := registerMiddlewareRandomly(availableMiddlewares)
+
 	checkSortedMiddlewares(middlewares, []string{"A", "E", "B", "D", "C"}, t)
 }
 
