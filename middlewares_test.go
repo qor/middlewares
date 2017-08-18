@@ -50,7 +50,7 @@ func checkSortedMiddlewares(middlewares *Middlewares, sortedNames []string, t *t
 }
 
 func TestCompileMiddlewares(t *testing.T) {
-	availableMiddlewares := []Middleware{{Name: "cookie"}, {Name: "flash", After: []string{"cookie"}}, {Name: "auth", Before: []string{"flash"}}}
+	availableMiddlewares := []Middleware{{Name: "cookie"}, {Name: "flash", InsertAfter: []string{"cookie"}}, {Name: "auth", InsertAfter: []string{"flash"}}}
 
 	middlewares := registerMiddlewareRandomly(availableMiddlewares)
 	checkSortedMiddlewares(middlewares, []string{"cookie", "flash", "auth"}, t)

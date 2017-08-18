@@ -4,9 +4,9 @@ import "net/http"
 
 // Middleware middleware struct
 type Middleware struct {
-	Name     string
-	Handler  func(http.Handler) http.Handler
-	Before   []string
-	After    []string
-	Requires []string
+	Name         string
+	Handler      func(http.Handler) http.Handler
+	InsertAfter  []string
+	InsertBefore []string
+	Requires     []string
 }
