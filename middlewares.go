@@ -36,22 +36,82 @@ func (middlewares *Middlewares) Remove(name string) {
 	}
 }
 
-func (middlewares *Middlewares) Compile() error {
+// CompiledMiddleware compile middlewares
+func (middlewares *Middlewares) CompiledMiddleware() func(handler http.Handler) http.Handler {
 	var (
-		errs           []error
-		middlewaresMap = map[string]*Middleware{}
+		errs                         []error
+		middlewareNames, sortedNames []string
+		middlewaresMap               = map[string]*Middleware{}
+		sortMiddleware               func(m *Middleware)
 	)
 
 	for _, middleware := range middlewares.middlewares {
 		middlewaresMap[middleware.Name] = middleware
+		middlewareNames = append(middlewareNames, middleware.Name)
 	}
 
-	for _, middleware := range middlewaresMap {
+	for _, middleware := range middlewares.middlewares {
 		for _, require := range middleware.Requires {
 			if _, ok := middlewaresMap[require]; !ok {
 				errs = append(errs, fmt.Errorf("middleware %v requires %v, but it doesn't exist", middleware.Name, require))
 			}
 		}
+	}
+
+	if len(errs) > 0 {
+		panic(fmt.Sprint(errs))
+	}
+
+	sortMiddleware = func(m *Middleware) {
+		if getRIndex(sortedNames, m.Name) == -1 { // if not sorted
+			// sort by before
+			var maxBeforeIndex int
+			for _, before := range m.Before {
+				idx := getRIndex(sortedNames, before)
+				if idx != -1 {
+					if idx > maxBeforeIndex {
+						maxBeforeIndex = idx
+					}
+				} else if idx := getRIndex(middlewareNames, before); idx != -1 {
+					sortedNames = append(sortedNames, m.Name)
+					sortMiddleware(middlewares.middlewares[idx])
+					// update middlewares after
+					middlewares.middlewares[idx].After = uniqueAppend(middlewares.middlewares[idx].After, m.Name)
+					maxBeforeIndex = len(sortedNames)
+				}
+			}
+
+			// FIXME
+			if maxBeforeIndex > 0 {
+				sortedNames = append(sortedNames[:maxBeforeIndex+1], append([]string{m.Name}, sortedNames[maxBeforeIndex+1:]...)...)
+			}
+
+			// sort by after
+			var minAfterIndex int
+			for _, after := range m.After {
+				idx := getRIndex(sortedNames, after)
+				if idx != -1 {
+					if idx < minAfterIndex {
+						minAfterIndex = idx
+					}
+				} else if idx := getRIndex(middlewareNames, after); idx != -1 {
+					middlewares.middlewares[idx].Before = uniqueAppend(middlewares.middlewares[idx].Before, m.Name)
+				}
+			}
+
+			if minAfterIndex > 0 {
+				sortedNames = append(sortedNames[:minAfterIndex+1], append([]string{m.Name}, sortedNames[minAfterIndex+1:]...)...)
+			}
+
+			// if current callback haven't been sorted, append it to last
+			if getRIndex(sortedNames, m.Name) == -1 {
+				sortedNames = append(sortedNames, m.Name)
+			}
+		}
+	}
+
+	for _, middleware := range middlewares.middlewares {
+		sortMiddleware(middleware)
 	}
 
 	return nil
@@ -65,5 +125,5 @@ func (middlewares *Middlewares) String() string {
 // Apply apply middlewares to handler
 func (middlewares *Middlewares) Apply(handler http.Handler) http.Handler {
 	// TODO sort, compile middlewares, wrap current handler
-	return handler
+	return middlewares.CompiledMiddleware()(handler)
 }
