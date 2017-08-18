@@ -3,10 +3,8 @@ package middlewares
 import (
 	"fmt"
 	"net/http"
+	"strings"
 )
-
-// MiddlewareHandler HTTP middleware
-type MiddlewareHandler func(http.Handler) http.Handler
 
 // Middlewares middlewares stack
 type Middlewares struct {
@@ -36,8 +34,8 @@ func (middlewares *Middlewares) Remove(name string) {
 	}
 }
 
-// CompiledMiddleware compile middlewares
-func (middlewares *Middlewares) CompiledMiddleware() func(handler http.Handler) http.Handler {
+// sortMiddlewares sort middlewares
+func (middlewares *Middlewares) sortMiddlewares() []*Middleware {
 	var (
 		errs                         []error
 		middlewareNames, sortedNames []string
@@ -114,16 +112,43 @@ func (middlewares *Middlewares) CompiledMiddleware() func(handler http.Handler) 
 		sortMiddleware(middleware)
 	}
 
-	return nil
+	var sortedMiddlewares []*Middleware
+	for _, name := range sortedNames {
+		sortedMiddlewares = append(sortedMiddlewares, middlewaresMap[name])
+	}
+
+	return sortedMiddlewares
 }
 
 func (middlewares *Middlewares) String() string {
-	// TODO sort, compile middlewares, print its name in order
-	return ""
+	var (
+		sortedNames       []string
+		sortedMiddlewares = middlewares.sortMiddlewares()
+	)
+
+	for _, middleware := range sortedMiddlewares {
+		sortedNames = append(sortedNames, middleware.Name)
+	}
+
+	return fmt.Sprintf("Middlewares: %v", strings.Join(sortedNames, ", "))
 }
 
 // Apply apply middlewares to handler
 func (middlewares *Middlewares) Apply(handler http.Handler) http.Handler {
-	// TODO sort, compile middlewares, wrap current handler
-	return middlewares.CompiledMiddleware()(handler)
+	var (
+		compiledHandler   http.Handler
+		sortedMiddlewares = middlewares.sortMiddlewares()
+	)
+
+	for idx := len(sortedMiddlewares) - 1; idx >= 0; idx-- {
+		middleware := sortedMiddlewares[idx]
+
+		if compiledHandler == nil {
+			compiledHandler = middleware.Handler(handler)
+		} else {
+			compiledHandler = middleware.Handler(compiledHandler)
+		}
+	}
+
+	return compiledHandler
 }
