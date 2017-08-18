@@ -62,10 +62,7 @@ func (middlewares *Middlewares) sortMiddlewares() []*Middleware {
 
 	sortMiddleware = func(m *Middleware) {
 		if _, found := getRIndex(sortedNames, m.Name); !found { // if not sorted
-			var (
-				minIndex = -1
-				maxIndex = -1
-			)
+			var minIndex = -1
 
 			// sort by InsertAfter
 			for _, insertAfter := range m.InsertAfter {
@@ -81,28 +78,28 @@ func (middlewares *Middlewares) sortMiddlewares() []*Middleware {
 
 					// update middlewares InsertBefore
 					middlewares.middlewares[idx].InsertBefore = uniqueAppend(middlewares.middlewares[idx].InsertBefore, m.Name)
-					minIndex = len(sortedNames) - 1
 				}
 			}
 
 			// sort by InsertBefore
 			for _, insertBefore := range m.InsertBefore {
-				idx, found := getRIndex(sortedNames, insertBefore)
-				if found && idx < minIndex {
-					minIndex = idx
+				if middleware, ok := middlewaresMap[insertBefore]; ok {
+					middleware.InsertAfter = uniqueAppend(middleware.InsertAfter, m.Name)
 				}
 
-				if idx, has := getRIndex(middlewareNames, insertBefore); has {
-					middlewares.middlewares[idx].InsertAfter = uniqueAppend(middlewares.middlewares[idx].InsertAfter, m.Name)
+				if idx, found := getRIndex(sortedNames, insertBefore); found {
+					if idx < minIndex {
+						sortedNames = append(sortedNames[:idx], sortedNames[idx+1:]...)
+						sortMiddleware(middlewaresMap[insertBefore])
+						return
+					}
 				}
 			}
 
-			if minIndex < maxIndex {
+			if minIndex >= 0 {
 				sortedNames = append(sortedNames[:minIndex+1], append([]string{m.Name}, sortedNames[minIndex+1:]...)...)
-			}
-
-			// if current callback haven't been sorted, append it to last
-			if _, has := getRIndex(sortedNames, m.Name); !has {
+			} else if _, has := getRIndex(sortedNames, m.Name); !has {
+				// if current callback haven't been sorted, append it to last
 				sortedNames = append(sortedNames, m.Name)
 			}
 		}

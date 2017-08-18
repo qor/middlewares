@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"fmt"
 	"math/rand"
 	"sort"
 	"strings"
@@ -34,18 +35,18 @@ func registerMiddleware(registeredMiddlewares []Middleware) *Middlewares {
 	return middlewares
 }
 
-func checkSortedMiddlewares(middlewares *Middlewares, sortedNames []string, t *testing.T) {
-	sortedMiddlewares := middlewares.sortMiddlewares()
+func checkSortedMiddlewares(middlewares *Middlewares, expectedNames []string, t *testing.T) {
+	var (
+		sortedNames       []string
+		sortedMiddlewares = middlewares.sortMiddlewares()
+	)
 
-	if len(sortedMiddlewares) != len(sortedNames) {
-		t.Errorf("Length should be same, but got %v, expect %v", middlewares.String(), strings.Join(sortedNames, ", "))
-		return
+	for _, middleware := range sortedMiddlewares {
+		sortedNames = append(sortedNames, middleware.Name)
 	}
 
-	for idx, middleware := range sortedMiddlewares {
-		if sortedNames[idx] != middleware.Name {
-			t.Errorf("Expected sorted middleware is %v, but got %v", strings.Join(sortedNames, ", "), middlewares.String())
-		}
+	if fmt.Sprint(sortedNames) != fmt.Sprint(expectedNames) {
+		t.Errorf("Expected sorted middleware is %v, but got %v", strings.Join(expectedNames, ", "), strings.Join(sortedNames, ", "))
 	}
 }
 
@@ -54,6 +55,13 @@ func TestCompileMiddlewares(t *testing.T) {
 
 	middlewares := registerMiddlewareRandomly(availableMiddlewares)
 	checkSortedMiddlewares(middlewares, []string{"cookie", "flash", "auth"}, t)
+}
+
+func TestCompileComplicatedMiddlewares(t *testing.T) {
+	availableMiddlewares := []Middleware{{Name: "A"}, {Name: "B", InsertBefore: []string{"C", "D"}}, {Name: "C", InsertAfter: []string{"E"}}, {Name: "D", InsertAfter: []string{"E"}, InsertBefore: []string{"C"}}, {Name: "E", InsertBefore: []string{"B"}, InsertAfter: []string{"A"}}}
+
+	middlewares := registerMiddlewareRandomly(availableMiddlewares)
+	checkSortedMiddlewares(middlewares, []string{"A", "E", "B", "D", "C"}, t)
 }
 
 func TestConflictingMiddlewares(t *testing.T) {
