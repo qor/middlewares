@@ -38,22 +38,22 @@ func (middlewares *Middlewares) Remove(name string) {
 }
 
 // Before insert middleware before name
-func (middlewares *Middlewares) Before(name string) Middleware {
+func (middlewares *Middlewares) Before(name ...string) Middleware {
 	return Middleware{
+		Before:      name,
 		middlewares: middlewares,
-		before:      name,
 	}
 }
 
 // After insert middleware after name
-func (middlewares *Middlewares) After(name string) Middleware {
+func (middlewares *Middlewares) After(name ...string) Middleware {
 	return Middleware{
+		After:       name,
 		middlewares: middlewares,
-		after:       name,
 	}
 }
 
-func (middleware) String() string {
+func (middlewares *Middlewares) String() string {
 	// TODO sort, compile middlewares, print its name in order
 	return ""
 }

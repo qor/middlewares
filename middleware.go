@@ -2,12 +2,13 @@ package middlewares
 
 // Middleware middleware struct
 type Middleware struct {
-	Name    string
-	Handler MiddlewareHandler
+	Name     string
+	Handler  MiddlewareHandler
+	Before   []string
+	After    []string
+	Requires []string
 
 	middlewares *Middlewares
-	before      string
-	after       string
 }
 
 // Use use middleware
