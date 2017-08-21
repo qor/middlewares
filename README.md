@@ -1,4 +1,4 @@
-# Middlewares
+# Middleware Stack
 
 Manage Golang HTTP middlewares
 
@@ -6,10 +6,10 @@ Manage Golang HTTP middlewares
 
 ```go
 func main() {
-	MiddlewaresStack := &Middlewares{}
+	Stack := &MiddlewareStack{}
 
-	// Adding a Middleware
-	MiddlewaresStack.Use(&middlewares.Middleware{
+	// Add middleware `auth` to stack
+	Stack.Use(&middlewares.Middleware{
 		Name: "auth",
 		// Insert middleware `auth` after middleware `session` if it exists
 		InsertAfter: []string{"session"},
@@ -17,10 +17,10 @@ func main() {
 		InsertBefore: []string{"authorization"},
 	})
 
-	// Removing middleware by name
-	MiddlewaresStack.Remove("cookie")
+	// Remove middleware `cookie` from stack
+	Stack.Remove("cookie")
 
 	mux := http.NewServeMux()
-	http.ListenAndServe(":9000", MiddlewaresStack.Apply(mux))
+	http.ListenAndServe(":9000", Stack.Apply(mux))
 }
 ```
