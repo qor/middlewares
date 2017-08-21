@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-func registerMiddlewareRandomly(registeredMiddlewares []Middleware) *Middlewares {
-	middlewares := &Middlewares{}
+func registerMiddlewareRandomly(registeredMiddlewares []Middleware) *MiddlewareStack {
+	stack := &MiddlewareStack{}
 	s := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(s)
 
@@ -19,26 +19,26 @@ func registerMiddlewareRandomly(registeredMiddlewares []Middleware) *Middlewares
 	})
 
 	for _, m := range registeredMiddlewares {
-		middlewares.Use(m)
+		stack.Use(m)
 	}
 
-	return middlewares
+	return stack
 }
 
-func registerMiddleware(registeredMiddlewares []Middleware) *Middlewares {
-	middlewares := &Middlewares{}
+func registerMiddleware(registeredMiddlewares []Middleware) *MiddlewareStack {
+	stack := &MiddlewareStack{}
 
 	for _, m := range registeredMiddlewares {
-		middlewares.Use(m)
+		stack.Use(m)
 	}
 
-	return middlewares
+	return stack
 }
 
-func checkSortedMiddlewares(middlewares *Middlewares, expectedNames []string, t *testing.T) {
+func checkSortedMiddlewares(stack *MiddlewareStack, expectedNames []string, t *testing.T) {
 	var (
 		sortedNames       []string
-		sortedMiddlewares = middlewares.sortMiddlewares()
+		sortedMiddlewares = stack.sortMiddlewares()
 	)
 
 	for _, middleware := range sortedMiddlewares {
@@ -53,15 +53,15 @@ func checkSortedMiddlewares(middlewares *Middlewares, expectedNames []string, t 
 func TestCompileMiddlewares(t *testing.T) {
 	availableMiddlewares := []Middleware{{Name: "cookie"}, {Name: "flash", InsertAfter: []string{"cookie"}}, {Name: "auth", InsertAfter: []string{"flash"}}}
 
-	middlewares := registerMiddlewareRandomly(availableMiddlewares)
-	checkSortedMiddlewares(middlewares, []string{"cookie", "flash", "auth"}, t)
+	stack := registerMiddlewareRandomly(availableMiddlewares)
+	checkSortedMiddlewares(stack, []string{"cookie", "flash", "auth"}, t)
 }
 
 func TestCompileComplicatedMiddlewares(t *testing.T) {
 	availableMiddlewares := []Middleware{{Name: "A"}, {Name: "B", InsertBefore: []string{"C", "D"}}, {Name: "C", InsertAfter: []string{"E"}}, {Name: "D", InsertAfter: []string{"E"}, InsertBefore: []string{"C"}}, {Name: "E", InsertBefore: []string{"B"}, InsertAfter: []string{"A"}}}
-	middlewares := registerMiddlewareRandomly(availableMiddlewares)
+	stack := registerMiddlewareRandomly(availableMiddlewares)
 
-	checkSortedMiddlewares(middlewares, []string{"A", "E", "B", "D", "C"}, t)
+	checkSortedMiddlewares(stack, []string{"A", "E", "B", "D", "C"}, t)
 }
 
 func TestConflictingMiddlewares(t *testing.T) {

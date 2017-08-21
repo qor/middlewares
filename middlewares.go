@@ -6,36 +6,36 @@ import (
 	"strings"
 )
 
-// Middlewares middlewares stack
-type Middlewares struct {
+// MiddlewareStack middlewares stack
+type MiddlewareStack struct {
 	middlewares []*Middleware
 }
 
 // Use use middleware
-func (middlewares *Middlewares) Use(middleware Middleware) {
-	middlewares.middlewares = append(middlewares.middlewares, &middleware)
+func (stack *MiddlewareStack) Use(middleware Middleware) {
+	stack.middlewares = append(stack.middlewares, &middleware)
 }
 
 // Remove remove middleware by name
-func (middlewares *Middlewares) Remove(name string) {
-	registeredMiddlewares := middlewares.middlewares
+func (stack *MiddlewareStack) Remove(name string) {
+	registeredMiddlewares := stack.middlewares
 	for idx, middleware := range registeredMiddlewares {
 		if middleware.Name == name {
 			if idx > 0 {
-				middlewares.middlewares = middlewares.middlewares[0 : idx-1]
+				stack.middlewares = stack.middlewares[0 : idx-1]
 			} else {
-				middlewares.middlewares = []*Middleware{}
+				stack.middlewares = []*Middleware{}
 			}
 
 			if idx < len(registeredMiddlewares)-1 {
-				middlewares.middlewares = append(middlewares.middlewares, registeredMiddlewares[idx+1:]...)
+				stack.middlewares = append(stack.middlewares, registeredMiddlewares[idx+1:]...)
 			}
 		}
 	}
 }
 
 // sortMiddlewares sort middlewares
-func (middlewares *Middlewares) sortMiddlewares() []*Middleware {
+func (stack *MiddlewareStack) sortMiddlewares() []*Middleware {
 	var (
 		errs                         []error
 		middlewareNames, sortedNames []string
@@ -43,12 +43,12 @@ func (middlewares *Middlewares) sortMiddlewares() []*Middleware {
 		sortMiddleware               func(m *Middleware)
 	)
 
-	for _, middleware := range middlewares.middlewares {
+	for _, middleware := range stack.middlewares {
 		middlewaresMap[middleware.Name] = middleware
 		middlewareNames = append(middlewareNames, middleware.Name)
 	}
 
-	for _, middleware := range middlewares.middlewares {
+	for _, middleware := range stack.middlewares {
 		for _, require := range middleware.Requires {
 			if _, ok := middlewaresMap[require]; !ok {
 				errs = append(errs, fmt.Errorf("middleware %v requires %v, but it doesn't exist", middleware.Name, require))
@@ -111,7 +111,7 @@ func (middlewares *Middlewares) sortMiddlewares() []*Middleware {
 		}
 	}
 
-	for _, middleware := range middlewares.middlewares {
+	for _, middleware := range stack.middlewares {
 		sortMiddleware(middleware)
 	}
 
@@ -123,24 +123,24 @@ func (middlewares *Middlewares) sortMiddlewares() []*Middleware {
 	return sortedMiddlewares
 }
 
-func (middlewares *Middlewares) String() string {
+func (stack *MiddlewareStack) String() string {
 	var (
 		sortedNames       []string
-		sortedMiddlewares = middlewares.sortMiddlewares()
+		sortedMiddlewares = stack.sortMiddlewares()
 	)
 
 	for _, middleware := range sortedMiddlewares {
 		sortedNames = append(sortedNames, middleware.Name)
 	}
 
-	return fmt.Sprintf("Middlewares: %v", strings.Join(sortedNames, ", "))
+	return fmt.Sprintf("MiddlewareStack: %v", strings.Join(sortedNames, ", "))
 }
 
 // Apply apply middlewares to handler
-func (middlewares *Middlewares) Apply(handler http.Handler) http.Handler {
+func (stack *MiddlewareStack) Apply(handler http.Handler) http.Handler {
 	var (
 		compiledHandler   http.Handler
-		sortedMiddlewares = middlewares.sortMiddlewares()
+		sortedMiddlewares = stack.sortMiddlewares()
 	)
 
 	for idx := len(sortedMiddlewares) - 1; idx >= 0; idx-- {
