@@ -37,8 +37,8 @@ func registerMiddleware(registeredMiddlewares []Middleware) *MiddlewareStack {
 
 func checkSortedMiddlewares(stack *MiddlewareStack, expectedNames []string, t *testing.T) {
 	var (
-		sortedNames       []string
-		sortedMiddlewares = stack.sortMiddlewares()
+		sortedNames          []string
+		sortedMiddlewares, _ = stack.sortMiddlewares()
 	)
 
 	for _, middleware := range sortedMiddlewares {

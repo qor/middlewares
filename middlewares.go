@@ -35,7 +35,7 @@ func (stack *MiddlewareStack) Remove(name string) {
 }
 
 // sortMiddlewares sort middlewares
-func (stack *MiddlewareStack) sortMiddlewares() []*Middleware {
+func (stack *MiddlewareStack) sortMiddlewares() (sortedMiddlewares []*Middleware, err error) {
 	var (
 		errs                         []error
 		middlewareNames, sortedNames []string
@@ -69,7 +69,7 @@ func (stack *MiddlewareStack) sortMiddlewares() []*Middleware {
 	}
 
 	if len(errs) > 0 {
-		panic(fmt.Sprint(errs))
+		return nil, fmt.Errorf("%v", errs)
 	}
 
 	sortMiddleware = func(m *Middleware) {
@@ -115,19 +115,22 @@ func (stack *MiddlewareStack) sortMiddlewares() []*Middleware {
 		sortMiddleware(middleware)
 	}
 
-	var sortedMiddlewares []*Middleware
 	for _, name := range sortedNames {
 		sortedMiddlewares = append(sortedMiddlewares, middlewaresMap[name])
 	}
 
-	return sortedMiddlewares
+	return sortedMiddlewares, nil
 }
 
 func (stack *MiddlewareStack) String() string {
 	var (
-		sortedNames       []string
-		sortedMiddlewares = stack.sortMiddlewares()
+		sortedNames            []string
+		sortedMiddlewares, err = stack.sortMiddlewares()
 	)
+
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	for _, middleware := range sortedMiddlewares {
 		sortedNames = append(sortedNames, middleware.Name)
@@ -139,9 +142,13 @@ func (stack *MiddlewareStack) String() string {
 // Apply apply middlewares to handler
 func (stack *MiddlewareStack) Apply(handler http.Handler) http.Handler {
 	var (
-		compiledHandler   http.Handler
-		sortedMiddlewares = stack.sortMiddlewares()
+		compiledHandler        http.Handler
+		sortedMiddlewares, err = stack.sortMiddlewares()
 	)
+
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	for idx := len(sortedMiddlewares) - 1; idx >= 0; idx-- {
 		middleware := sortedMiddlewares[idx]
