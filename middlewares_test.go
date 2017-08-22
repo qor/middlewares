@@ -69,5 +69,10 @@ func TestConflictingMiddlewares(t *testing.T) {
 }
 
 func TestMiddlewaresWithRequires(t *testing.T) {
-	t.Skipf("conflicting middlewares")
+	availableMiddlewares := []Middleware{{Name: "flash", Requires: []string{"cookie"}}, {Name: "session"}}
+	stack := registerMiddlewareRandomly(availableMiddlewares)
+
+	if _, err := stack.sortMiddlewares(); err == nil {
+		t.Errorf("Should return error as required middleware doesn't exist")
+	}
 }
